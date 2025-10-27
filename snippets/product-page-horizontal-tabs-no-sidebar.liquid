@@ -499,7 +499,7 @@
                                         serial: 1
                                     %}
                                 {%- endif -%}
-                                <div class="productView-nav productView-horizontal-tabs style-{{ main_image_layout }}{% if show_variant_image_group %} enable_variant_image_group{% endif %}" 
+                                <div class="productView-nav productView-horizontal-tabs style-{{ main_image_layout }}{% if show_variant_image_group %} enable_variant_image_group{% endif %}"
                                     data-image-gallery-main
                                     data-arrows-desk="{{ main_image_arrows_desktop }}"
                                     data-arrows-mobi="{{ main_image_arrows_mobile }}"
@@ -773,23 +773,70 @@
                                                     <div class="productView-thumbnail filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}" data-media-id="{{ section.id }}-{{ media.id }}">
                                                         <div class="productView-thumbnail-link animated-loading">
                                                             {{ media | media_tag }}
-                                                        </div>
                                                     </div>
-                                            {%- endcase -%}
-                                        {%- endfor -%}
+                                                </div>
+                                        {%- endcase -%}
+                                    {%- endfor -%}
                                     </div>
+                                </div>
+                            {%- endif -%}
+                            {%- assign desktop_media_grid = product.media | where: 'media_type', 'image' | sort_natural: 'alt' -%}
+                            {% if desktop_media_grid.size > 0 %}
+                                <div class="productView-grid productView-grid--desktop">
+                                    {% for media in desktop_media_grid %}
+                                        {% assign grid_aspect_ratio = media.preview_image.aspect_ratio %}
+                                        {% if grid_aspect_ratio %}
+                                            {% assign grid_frame_style = ' style="aspect-ratio: ' | append: grid_aspect_ratio | append: ';"' %}
+                                        {% else %}
+                                            {% assign grid_frame_style = '' %}
+                                        {% endif %}
+                                        <div class="productView-grid__item{% if forloop.first %} productView-grid__item--featured{% endif %}">
+                                            <div class="productView-grid__media">
+                                                {% if product_image_popup == 'fancybox' %}
+                                                    <a class="productView-grid__frame"{{ grid_frame_style }} data-fancybox="images" href="{{ media.preview_image | img_url: 'master' }}"{% if zoomed_image and main_image_show_custom_cursor != true %} data-zoom-image="{{ media.preview_image | img_url: 'master' }}"{% endif %}>
+                                                {% else %}
+                                                    <div class="productView-grid__frame"{{ grid_frame_style }}{% if zoomed_image and main_image_show_custom_cursor != true %} data-zoom-image="{{ media.preview_image | img_url: 'master' }}"{% endif %}>
+                                                {% endif %}
+                                                    <img
+                                                        src="{{ media | img_url: 'master' }}"
+                                                        alt="{{ media.preview_image.alt | escape }}"
+                                                        loading="lazy"
+                                                        width="{{ media.preview_image.width }}"
+                                                        height="{{ media.preview_image.height }}"
+                                                        class="productView-grid__img"
+                                                    />
+                                                {% if product_image_popup == 'fancybox' %}
+                                                    </a>
+                                                {% else %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             {%- endif -%}
                         </div>
                     </div>
                     <div class="halo-productView-right productView-details clearfix">
                         <div class="productView-product clearfix">
+
+                            {%- assign hero_breadcrumb_markup = '' -%}
+                            {%- assign hero_title_markup = '' -%}
+                            {%- assign hero_price_markup = '' -%}
+                            {%- assign hero_variant_markup = '' -%}
+                            {%- assign hero_quantity_markup = '' -%}
+                            {%- assign hero_perks_markup = '' -%}
+                            {%- assign hero_buy_buttons_markup = '' -%}
+                            {%- assign hero_short_desc_markup = '' -%}
+                            {%- assign remaining_blocks_markup = '' -%}
+
                             {%- for block in section.blocks -%}
                                 {%- liquid
                                     assign spacing_top = block.settings.spacing_top
                                     assign spacing_bottom = block.settings.spacing_bottom
                                 -%}
-                                {%- case block.type -%}
+                                {% capture block_markup %}
+{%- case block.type -%}
                                     {%- when 'breadcrumb' -%}
                                         {%- if breadcrumb_layout == 'content' -%}
                                             <div class="productView-moreItem moreItem-breadcrumb {% unless check_breadcrumb_full %}hidden-on-mobile{% endunless %}{% if settings.banner_animation == 'effect_fade_up' %} scroll-trigger animate--slide-in{% endif %}"
@@ -1479,7 +1526,102 @@
                                             <script src="{{ "delivery-time.js" | asset_url }}" defer="defer"></script>
                                         </div>
                                 {%- endcase -%}
+
+                                {% endcapture %}
+                                {% case block.type %}
+                                    {%- when 'breadcrumb' -%}
+                                        {% assign hero_breadcrumb_markup = block_markup %}
+                                    {%- when 'title' -%}
+                                        {% assign hero_title_markup = block_markup %}
+                                    {%- when 'price' -%}
+                                        {% assign hero_price_markup = block_markup %}
+                                    {%- when 'variant_picker' -%}
+                                        {% assign hero_variant_markup = hero_variant_markup | append: block_markup %}
+                                    {%- when 'quantity_selector' -%}
+                                        {% assign hero_quantity_markup = hero_quantity_markup | append: block_markup %}
+                                    {%- when 'perks' -%}
+                                        {% assign hero_perks_markup = hero_perks_markup | append: block_markup %}
+                                    {%- when 'buy_buttons' -%}
+                                        {% assign hero_buy_buttons_markup = block_markup %}
+                                    {%- when 'short_description' -%}
+                                        {% assign hero_short_desc_markup = hero_short_desc_markup | append: block_markup %}
+                                    {%- else -%}
+                                        {% assign remaining_blocks_markup = remaining_blocks_markup | append: block_markup %}
+                                {% endcase %}
                             {%- endfor -%}
+
+                            {{ hero_breadcrumb_markup }}
+                            <div class="productView-hero">
+                                {% assign tiktok_badge_text = product.metafields.custom.as_seen_on_tiktok | default: product.metafields.c_f.as_seen_on_tiktok | default: 'As Seen On TikTok' %}
+                                {% if tiktok_badge_text != blank %}
+                                    <span class="productView-hero__badge">{{ tiktok_badge_text }}</span>
+                                {% endif %}
+                                {% if hero_title_markup != blank %}
+                                    {{ hero_title_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__title' }}
+                                {% endif %}
+                                {% if hero_price_markup != blank %}
+                                    <div class="productView-hero__meta">
+                                        {{ hero_price_markup | replace: 'price--medium', 'price--large price--hero' | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__price' }}
+                                    </div>
+                                {% endif %}
+                                {% if hero_variant_markup != blank or hero_quantity_markup != blank %}
+                                    <div class="productView-hero__options">
+                                        {% if hero_variant_markup != blank %}
+                                            {{ hero_variant_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__variant' }}
+                                        {% endif %}
+                                        {% if hero_quantity_markup != blank %}
+                                            {{ hero_quantity_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__quantity' }}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                {% if hero_perks_markup != blank %}
+                                    {{ hero_perks_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__perks' }}
+                                {% endif %}
+                                {% if hero_buy_buttons_markup != blank %}
+                                    {{ hero_buy_buttons_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__actions' }}
+                                {% endif %}
+                                {% if hero_short_desc_markup != blank %}
+                                    {{ hero_short_desc_markup | replace: 'productView-moreItem', 'productView-moreItem productView-hero__item productView-hero__short-description' }}
+                                {% endif %}
+                                {% assign long_description_content = product.description %}
+                                {% assign details_content = product.metafields.custom.details | default: product.metafields.c_f.details %}
+                                {% assign materials_content = product.metafields.custom.materials | default: product.metafields.c_f.materials %}
+                                {% assign stones_content = product.metafields.custom.stones | default: product.metafields.c_f.stones %}
+                                {% assign crystal_grade_content = product.metafields.custom.crystal_grade | default: product.metafields.c_f.crystal_grade %}
+                                {% if long_description_content != blank or details_content != blank or materials_content != blank or stones_content != blank or crystal_grade_content != blank %}
+                                    <div class="productView-hero__accordions">
+                                        {% if long_description_content != blank %}
+                                            <details class="productView-accordion" open>
+                                                <summary class="productView-accordion__summary">{{ 'products.product.description' | t | default: 'Product Description' }}</summary>
+                                                <div class="productView-accordion__content rte">{{ long_description_content }}</div>
+                                            </details>
+                                        {% endif %}
+                                        {% if details_content != blank %}
+                                            <details class="productView-accordion" open>
+                                                <summary class="productView-accordion__summary">{{ 'general.details' | t | default: 'Details' }}</summary>
+                                                <div class="productView-accordion__content rte">{{ details_content }}</div>
+                                            </details>
+                                        {% endif %}
+                                        {% if materials_content != blank or stones_content != blank or crystal_grade_content != blank %}
+                                            <details class="productView-accordion" open>
+                                                <summary class="productView-accordion__summary">{{ 'products.product.materials' | t | default: 'Materials / Stones / Crystal Grade' }}</summary>
+                                                <div class="productView-accordion__content rte">
+                                                    {% if materials_content != blank %}
+                                                        <div class="productView-accordion__item">{{ materials_content }}</div>
+                                                    {% endif %}
+                                                    {% if stones_content != blank %}
+                                                        <div class="productView-accordion__item">{{ stones_content }}</div>
+                                                    {% endif %}
+                                                    {% if crystal_grade_content != blank %}
+                                                        <div class="productView-accordion__item">{{ crystal_grade_content }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </details>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {{ remaining_blocks_markup }}
                             {%- if show_tab -%}
                                 {%- if tab_layout == 'vertical' or tab_layout == 'vertical_sidebar' or tab_layout == 'popup' -%}
                                     {% render 'halo-product-tab',
