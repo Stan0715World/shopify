@@ -993,6 +993,137 @@
                                                         <span>{{ 'products.product.volume_pricing.note' | t }}</span>
                                                     </div>
                                                 {%- endif -%}
+                                                {%- liquid
+                                                    assign rating_raw = block.settings.review_rating | default: ''
+                                                    assign rating_value = rating_raw | replace: ',', '.' | times: 1
+                                                    assign rating_percentage = rating_value | times: 20
+                                                    assign review_count = block.settings.review_count | default: ''
+                                                    assign review_label = block.settings.review_label | default: 'Reviews'
+                                                    assign size_label = block.settings.size_label | default: ''
+                                                    assign size_options = ''
+                                                    assign size_option_name = ''
+                                                    assign size_option_position = ''
+                                                    for option in product.options_with_values
+                                                        assign option_name_downcase = option.name | strip | downcase
+                                                        if option_name_downcase contains 'size'
+                                                            assign size_options = option.values
+                                                            assign size_option_name = option.name | strip
+                                                            assign size_option_position = forloop.index0
+                                                            break
+                                                        endif
+                                                    endfor
+                                                    if size_label == '' and size_option_name != ''
+                                                        assign size_label = size_option_name
+                                                    elsif size_label == ''
+                                                        assign size_label = 'Size'
+                                                    endif
+                                                    assign selected_size_value = ''
+                                                    if size_option_position != '' and current_variant
+                                                        case size_option_position
+                                                            when 0
+                                                                assign selected_size_value = current_variant.option1 | default: ''
+                                                            when 1
+                                                                assign selected_size_value = current_variant.option2 | default: ''
+                                                            when 2
+                                                                assign selected_size_value = current_variant.option3 | default: ''
+                                                        endcase
+                                                    endif
+                                                    assign selected_size_value_normalized = selected_size_value | strip | downcase
+                                                    assign review_aria_label = ''
+                                                    if rating_raw != ''
+                                                        assign review_aria_label = rating_value | round: 1 | append: ' out of 5 stars'
+                                                    elsif review_count != ''
+                                                        assign review_aria_label = review_count | append: ' ' | append: review_label
+                                                    endif
+                                                -%}
+                                                <div class="productView-priceExtras">
+                                                    {%- if rating_raw != '' or review_count != '' -%}
+                                                        <div class="productView-reviews" role="img"{% if review_aria_label != '' %} aria-label="{{ review_aria_label }}"{% endif %}>
+                                                            <div class="productView-stars">
+                                                                <div class="productView-stars__inner">
+                                                                    <div class="productView-stars__base" aria-hidden="true">
+                                                                        {% for i in (1..5) %}
+                                                                            <svg class="productView-star" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                                                <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.787 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.211l8.2-1.193z"/>
+                                                                            </svg>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    {%- if rating_raw != '' -%}
+                                                                        <div class="productView-stars__value" aria-hidden="true" style="width: {{ rating_percentage | at_least: 0 | at_most: 100 }}%">
+                                                                            {% for i in (1..5) %}
+                                                                                <svg class="productView-star" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                                                    <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.787 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.211l8.2-1.193z"/>
+                                                                                </svg>
+                                                                            {% endfor %}
+                                                                        </div>
+                                                                    {%- endif -%}
+                                                                </div>
+                                                            </div>
+                                                            <div class="productView-reviews__meta">
+                                                                {%- if rating_raw != '' -%}
+                                                                    <span class="productView-ratingValue">{{ rating_value | round: 1 }}</span>
+                                                                    <span class="productView-ratingMax">/ 5</span>
+                                                                {%- endif -%}
+                                                                {%- if review_count != '' -%}
+                                                                    <span class="productView-reviewCount">{{ review_count }}</span>
+                                                                    <span class="productView-reviewLabel">{{ review_label }}</span>
+                                                                {%- endif -%}
+                                                            </div>
+                                                        </div>
+                                                    {%- endif -%}
+                                                    {%- assign has_sizes = false -%}
+                                                    {%- if size_options != blank -%}
+                                                        {%- for size_option in size_options -%}
+                                                            {%- assign size_value_check = size_option | strip -%}
+                                                            {%- if size_value_check != '' -%}
+                                                                {%- assign has_sizes = true -%}
+                                                                {%- break -%}
+                                                            {%- endif -%}
+                                                        {%- endfor -%}
+                                                    {%- endif -%}
+                                                    {%- if has_sizes -%}
+                                                        <div class="productView-sizeSelector" data-size-selector="{{ block.id }}">
+                                                            {%- if size_label != '' -%}
+                                                                <span class="productView-sizeSelector__label">{{ size_label }}</span>
+                                                            {%- endif -%}
+                                                            <div class="productView-sizeSelector__options">
+                                                                {%- for size_option in size_options -%}
+                                                                    {%- assign size_value = size_option | strip -%}
+                                                                    {%- if size_value != '' -%}
+                                                                        {%- assign size_value_normalized = size_value | downcase -%}
+                                                                        {%- assign is_active_size = false -%}
+                                                                        {%- if selected_size_value_normalized != '' and size_value_normalized == selected_size_value_normalized -%}
+                                                                            {%- assign is_active_size = true -%}
+                                                                        {%- elsif selected_size_value_normalized == '' and forloop.first -%}
+                                                                            {%- assign is_active_size = true -%}
+                                                                        {%- endif -%}
+                                                                        <button type="button" class="productView-sizeSelector__option{% if is_active_size %} is-active{% endif %}" data-size-value="{{ size_value | escape }}" aria-pressed="{% if is_active_size %}true{% else %}false{% endif %}">
+                                                                            {{ size_value }}
+                                                                        </button>
+                                                                    {%- endif -%}
+                                                                {%- endfor -%}
+                                                            </div>
+                                                        </div>
+                                                        <script>
+                                                            (function() {
+                                                                var selector = document.querySelector('[data-size-selector="{{ block.id }}"]');
+                                                                if (!selector || selector.dataset.initialized === 'true') return;
+                                                                selector.dataset.initialized = 'true';
+                                                                selector.addEventListener('click', function(event) {
+                                                                    var button = event.target.closest('button.productView-sizeSelector__option');
+                                                                    if (!button) return;
+                                                                    var buttons = selector.querySelectorAll('button.productView-sizeSelector__option');
+                                                                    buttons.forEach(function(item) {
+                                                                        item.classList.remove('is-active');
+                                                                        item.setAttribute('aria-pressed', 'false');
+                                                                    });
+                                                                    button.classList.add('is-active');
+                                                                    button.setAttribute('aria-pressed', 'true');
+                                                                });
+                                                            })();
+                                                        </script>
+                                                    {%- endif -%}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     {%- when 'countdown' -%}

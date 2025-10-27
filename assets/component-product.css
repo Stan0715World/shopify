@@ -1266,13 +1266,14 @@
 
 .productView-title{
     display: block;
-    font-size: clamp(2rem, calc(var(--fontsize-text) * 1.1), 3.125rem);
+    font-family: var(--font-heading-family, var(--font-body-family));
+    font-size: clamp(2.375rem, calc(var(--fontsize-text) * 1.25), 3.5rem);
     font-weight: 700;
     text-transform: var(--product-title-text-transform);
-    letter-spacing: -0.02em;
-    color: var(--color-title);
+    letter-spacing: -0.015em;
+    color: #111111;
     margin: 0 0 1.25rem;
-    line-height: 1.08;
+    line-height: 1.04;
 }
 
 .productView-title span {
@@ -1480,10 +1481,12 @@
 
 .productView-price .price.price--medium .price-item,
 .productView-price .price.price--medium .price-item .money {
-    font-size: clamp(1.75rem, calc(var(--fontsize-text) * 1.05), 2.5rem);
-    line-height: 1.12;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: var(--font-heading-family, var(--font-body-family));
+    font-size: clamp(1.875rem, calc(var(--fontsize-text) * 1.15), 2.75rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #111111;
 }
 
 .productView-price+.volume-pricing-note {
@@ -3644,6 +3647,173 @@ quantity-input.disabled {
   justify-content: flex-start;
   transform: none !important; /* remove flicker/shift before init */
   transition: none !important;
+}
+
+.productView-priceExtras {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.productView-reviews {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    color: var(--color-text, #1f2024);
+}
+
+.productView-stars {
+    display: inline-flex;
+    align-items: center;
+}
+
+.productView-stars__inner {
+    position: relative;
+    display: inline-flex;
+}
+
+.productView-stars__base,
+.productView-stars__value {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.productView-stars__value {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    color: #ffb400;
+}
+
+.productView-star {
+    width: 18px;
+    height: 18px;
+    color: #d0d0d7;
+}
+
+.productView-star path {
+    fill: currentColor;
+}
+
+.productView-stars__value .productView-star {
+    color: #ffb400;
+}
+
+.productView-reviews__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: var(--font-body-family);
+    font-size: 15px;
+    font-weight: 500;
+    color: #3a3a44;
+}
+
+.productView-ratingValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111111;
+}
+
+.productView-ratingMax {
+    color: #7b7b86;
+    font-weight: 400;
+}
+
+.productView-reviewCount {
+    font-weight: 600;
+    color: #111111;
+}
+
+.productView-reviewLabel {
+    color: #7b7b86;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+}
+
+.productView-sizeSelector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.productView-sizeSelector__label {
+    font-family: var(--font-heading-family, var(--font-body-family));
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #111111;
+}
+
+.productView-sizeSelector__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.productView-sizeSelector__option {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid #d7d7e0;
+    background-color: #ffffff;
+    color: #111111;
+    font-family: var(--font-heading-family, var(--font-body-family));
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.productView-sizeSelector__option:hover {
+    border-color: #a4a4b5;
+    box-shadow: 0 8px 16px rgba(17, 17, 17, 0.08);
+}
+
+.productView-sizeSelector__option:focus-visible {
+    outline: none;
+    border-color: #111111;
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+}
+
+.productView-sizeSelector__option.is-active {
+    background: linear-gradient(135deg, #111111, #3f3f44);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 20px rgba(17, 17, 17, 0.18);
+}
+
+.productView-sizeSelector__option.is-active:hover {
+    box-shadow: 0 12px 22px rgba(17, 17, 17, 0.24);
+}
+
+@media (max-width: 749px) {
+    .productView-priceExtras {
+        gap: 14px;
+        margin-top: 12px;
+    }
+
+    .productView-reviews__meta {
+        font-size: 14px;
+    }
+
+    .productView-ratingValue {
+        font-size: 18px;
+    }
+
+    .productView-sizeSelector__option {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
 }
 
 /* Prevent Slick slides from collapsing early */
