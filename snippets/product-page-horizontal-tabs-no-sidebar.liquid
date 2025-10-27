@@ -1,3 +1,4 @@
+
 {%- liquid
     assign container = section.settings.container
     assign padding_full_width = section.settings.padding_full_width
@@ -69,17 +70,6 @@
     endif
     assign first_3d_model = product.media | where: "media_type", "model" | first
     assign has_product_combo = false
-
-    assign product_media_images_sorted = product.media | where: 'media_type', 'image' | sort_natural: 'alt'
-    assign product_media_sorted = '' | split: ''
-    for media in product_media_images_sorted
-        assign product_media_sorted = product_media_sorted | push: media
-    endfor
-    for media in product.media
-        unless media.media_type == 'image'
-            assign product_media_sorted = product_media_sorted | push: media
-        endunless
-    endfor
 
     assign has_sidebar = false
     assign show_sidebar = section.settings.show_sidebar
@@ -517,14 +507,10 @@
                                     data-counter-mobi="{{ main_image_counter_mobile }}"
                                     data-media-count="{{ product.media.size }}"
                                 >
-                                    {%- for media in product_media_sorted -%}
-                                        {%- if media == blank -%}
-                                            {%- continue -%}
-                                        {%- endif -%}
-                                        {%- assign media_loop_index = forloop.index -%}
+                                    {%- for media in product.media -%}
                                         {%- case media.media_type -%}
                                             {%- when 'image' -%}
-                                                <div class="productView-image productView-image-{{ media_size }} {% if show_variant_image_group %} filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}{% endif %} fit-{{ media_fit }}" data-index="{{ media_loop_index }}">
+                                                <div class="productView-image productView-image-{{ media_size }} {% if show_variant_image_group %} filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}{% endif %} fit-{{ media_fit }}" data-index="{{ forloop.index }}">
                                                     <div class="productView-img-container product-single__media" data-media-id="{{ media.id }}"
                                                         {% if product.featured_media %}
                                                             {% if media_size == 'adapt' %}
@@ -544,8 +530,8 @@
                                                             {% if product_image_popup == 'fancybox' %} data-fancybox="images" href="{{ media.preview_image | img_url: 'master' }}" {% endif %}
                                                         >
                                                             <img id="product-featured-image-{{ media.id }}"
-                                                                {% if settings.enable_lazyload and media_loop_index > 2 %}data-{% endif %}srcset="{{ media.preview_image | img_url: 'master' }}"
-                                                                {% unless settings.enable_lazyload and media_loop_index > 2 %}src="{{ media | img_url: 'master' }}"{% endunless %}
+                                                                {% if settings.enable_lazyload and forloop.index > 2 %}data-{% endif %}srcset="{{ media.preview_image | img_url: 'master' }}"
+                                                                {% unless settings.enable_lazyload and forloop.index > 2 %}src="{{ media | img_url: 'master' }}"{% endunless %}
                                                                 {% if settings.enable_lazyload %}data-src="{{ media | img_url: 'master' }}"{% endif %}
                                                                 alt="{{ media.preview_image.alt | escape }}"
                                                                 sizes="(min-width: 2000px) 1500px, (min-width: 1200px) 1200px, (min-width: 768px) calc((100vw - 30px) / 2), calc(100vw - 20px)"
@@ -554,11 +540,11 @@
                                                                 loading="lazy"
                                                                 data-sizes="auto"
                                                                 data-main-image
-                                                                data-index="{{ media_loop_index }}"
+                                                                data-index="{{ forloop.index }}"
                                                                 data-cursor-image
-                                                                {% if settings.enable_lazyload and media_loop_index > 2 %}class="lazyload"{% endif %}
+                                                                {% if settings.enable_lazyload and forloop.index > 2 %}class="lazyload"{% endif %}
                                                             />
-                                                            {%- if settings.enable_lazyload and media_loop_index > 2 -%}<span class="data-lazy-loading"></span>{%- endif -%}
+                                                            {%- if settings.enable_lazyload and forloop.index > 2 -%}<span class="data-lazy-loading"></span>{%- endif -%}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -706,10 +692,7 @@
                                 </div>
                                 {%- if video_layout == 'popup' -%}
                                     <div class="productView-videoPopup">
-                                        {%- for media in product_media_sorted -%}
-                                            {%- if media == blank -%}
-                                                {%- continue -%}
-                                            {%- endif -%}
+                                        {%- for media in product.media -%}
                                             {%- case media.media_type -%}
                                                 {%- when 'external_video' -%}
                                                     {%- if media.host == 'youtube' -%}
@@ -748,10 +731,7 @@
                             {%- if thumnail_layout != '4' -%}
                                 <div class="productView-thumbnail-wrapper{% unless show_thumbnail_mobile %} is-hidden-mobile{% endunless %}">
                                     <div class="productView-for clearfix" data-max-thumbnail-to-show="{{ max_thumbnail_to_show }}">
-                                        {%- for media in product_media_sorted -%}
-                                            {%- if media == blank -%}
-                                                {%- continue -%}
-                                            {%- endif -%}
+                                        {%- for media in product.media -%}
                                             {%- case media.media_type -%}
                                                 {%- when 'image' -%}
                                                     <div class="productView-thumbnail {% if show_variant_image_group %} filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}{% endif %}" data-media-id="{{ section.id }}-{{ media.id }}">
