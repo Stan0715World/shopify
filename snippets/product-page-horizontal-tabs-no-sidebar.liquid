@@ -797,11 +797,11 @@
                                                     </div>
                                                 </div>
                                         {%- endcase -%}
-                                        {%- endfor -%}
+                                    {%- endfor -%}
                                     </div>
                                 </div>
                             {%- endif -%}
-                            {%- assign desktop_media_grid = product_media_images_sorted -%}
+                            {%- assign desktop_media_grid = product.media | where: 'media_type', 'image' | sort_natural: 'alt' -%}
                             {% if desktop_media_grid.size > 0 %}
                                 <div class="productView-grid productView-grid--desktop">
                                     {% for media in desktop_media_grid %}
