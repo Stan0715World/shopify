@@ -295,6 +295,40 @@
     padding-top: 20px;
 }
 
+.productView-hero__accordions--only-recommendations {
+    border-top: none;
+    padding-top: 0;
+}
+
+.productView-hero__recommendations:not(.is-loaded) {
+    display: none;
+}
+
+.productView-hero__accordions .productView-hero__recommendations {
+    margin-top: 16px;
+}
+
+.productView-hero__recommendations .productView-recommendations:not(.is-loaded) {
+    display: none;
+}
+
+.productView-hero__recommendations .productView-recommendations__section {
+    width: 100%;
+}
+
+.productView-hero__recommendations .productView-recommendations__section .halo-product-block {
+    margin: 0;
+}
+
+.productView-hero__recommendations .productView-recommendations__section .wrapper-container,
+.productView-hero__recommendations .productView-recommendations__section .container,
+.productView-hero__recommendations .productView-recommendations__section .container-1170,
+.productView-hero__recommendations .productView-recommendations__section .container-1770,
+.productView-hero__recommendations .productView-recommendations__section .container-full {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .productView-accordion {
     background: rgba(0, 0, 0, 0.02);
     border-radius: 12px;
