@@ -1640,8 +1640,12 @@
                                 {% assign materials_content = product.metafields.custom.materials | default: product.metafields.c_f.materials %}
                                 {% assign stones_content = product.metafields.custom.stones | default: product.metafields.c_f.stones %}
                                 {% assign crystal_grade_content = product.metafields.custom.crystal_grade | default: product.metafields.c_f.crystal_grade %}
+                                {% assign has_accordion_content = false %}
                                 {% if long_description_content != blank or details_content != blank or materials_content != blank or stones_content != blank or crystal_grade_content != blank %}
-                                    <div class="productView-hero__accordions">
+                                    {% assign has_accordion_content = true %}
+                                {% endif %}
+                                <div class="productView-hero__accordions{% unless has_accordion_content %} productView-hero__accordions--only-recommendations{% endunless %}">
+                                    {% if has_accordion_content %}
                                         {% if long_description_content != blank %}
                                             <details class="productView-accordion" open>
                                                 <summary class="productView-accordion__summary">{{ 'products.product.description' | t | default: 'Product Description' }}</summary>
@@ -1670,55 +1674,142 @@
                                                 </div>
                                             </details>
                                         {% endif %}
+                                    {% endif %}
+                                    <div class="productView-hero__recommendations" data-inline-recommendations-wrapper>
+                                        <div
+                                            class="productView-recommendations productView-moreItem"
+                                            id="ProductRecommendationsInline-{{ section.id }}"
+                                            data-inline-recommendations
+                                            data-inline-recommendations-url="{{ routes.product_recommendations_url }}?section_id=product-recommendations&product_id={{ product.id }}"
+                                        ></div>
                                     </div>
-                                {% endif %}
-                                <div class="productView-recommendations productView-moreItem" id="ProductRecommendationsInline-{{ section.id }}" data-inline-recommendations></div>
+                                </div>
                                 <script>
                                     (function() {
                                         var targetSelector = '#ProductRecommendationsInline-{{ section.id }}';
                                         var sourceSelector = '#shopify-section-product-recommendations';
+                                        var wrapperAttribute = 'data-inline-recommendations-wrapper';
 
-                                        function moveRecommendations() {
-                                            var target = document.querySelector(targetSelector);
-                                            var source = document.querySelector(sourceSelector);
+                                        function markLoaded(target) {
+                                            if (!target) return;
+                                            target.classList.add('is-loaded');
+                                            var wrapper = target.closest('[' + wrapperAttribute + ']');
+                                            if (wrapper) {
+                                                wrapper.classList.add('is-loaded');
+                                            }
+                                        }
 
+                                        function moveSource(target, source) {
                                             if (!target || !source) {
-                                                return;
+                                                return false;
                                             }
 
                                             if (target.contains(source)) {
-                                                target.classList.add('is-loaded');
+                                                markLoaded(target);
+                                                return true;
+                                            }
+
+                                            target.innerHTML = '';
+                                            source.classList.add('productView-recommendations__section');
+                                            target.appendChild(source);
+                                            markLoaded(target);
+                                            return true;
+                                        }
+
+                                        function fetchAndInject(url, target) {
+                                            if (!url || !target) return;
+
+                                            fetch(url)
+                                                .then(function(response) {
+                                                    if (!response.ok) {
+                                                        throw new Error('Failed to load recommendations');
+                                                    }
+                                                    return response.text();
+                                                })
+                                                .then(function(html) {
+                                                    var parser = new DOMParser();
+                                                    var doc = parser.parseFromString(html, 'text/html');
+                                                    var section = doc.getElementById('shopify-section-product-recommendations');
+
+                                                    if (!section) {
+                                                        return;
+                                                    }
+
+                                                    target.innerHTML = section.innerHTML;
+                                                    markLoaded(target);
+                                                })
+                                                .catch(function() {});
+                                        }
+
+                                        function initInlineRecommendations(force) {
+                                            var target = document.querySelector(targetSelector);
+                                            if (!target) {
                                                 return;
                                             }
 
-                                            source.classList.add('productView-recommendations__section');
-                                            target.appendChild(source);
-                                            target.classList.add('is-loaded');
+                                            if (!force && target.dataset.inlineRecommendationsInitialized === 'true') {
+                                                return;
+                                            }
+
+                                            target.dataset.inlineRecommendationsInitialized = 'true';
+
+                                            var source = document.querySelector(sourceSelector);
+                                            var dataUrl = target.getAttribute('data-inline-recommendations-url');
+
+                                            if (!dataUrl && source) {
+                                                var block = source.querySelector('[data-recommendations-block]');
+                                                if (block) {
+                                                    dataUrl = block.getAttribute('data-url');
+                                                }
+                                            }
+
+                                            var moved = moveSource(target, source);
+
+                                            if (!moved && source) {
+                                                var observer = new MutationObserver(function() {
+                                                    if (moveSource(target, source)) {
+                                                        observer.disconnect();
+                                                    }
+                                                });
+
+                                                observer.observe(source, {
+                                                    childList: true,
+                                                    subtree: true
+                                                });
+                                            }
+
+                                            window.setTimeout(function() {
+                                                if (target.querySelector('.halo-product-block, [data-recommendations-block]')) {
+                                                    markLoaded(target);
+                                                    return;
+                                                }
+
+                                                fetchAndInject(dataUrl, target);
+                                            }, 700);
+                                        }
+
+                                        function handleSectionLoad(event) {
+                                            if (!event || !event.detail) return;
+
+                                            var id = event.detail.sectionId;
+                                            if (id === '{{ section.id }}' || id === 'product-recommendations') {
+                                                var target = document.querySelector(targetSelector);
+                                                if (target) {
+                                                    target.dataset.inlineRecommendationsInitialized = 'false';
+                                                }
+                                                initInlineRecommendations(true);
+                                            }
                                         }
 
                                         if (document.readyState === 'loading') {
-                                            document.addEventListener('DOMContentLoaded', moveRecommendations, { once: true });
+                                            document.addEventListener('DOMContentLoaded', function() {
+                                                initInlineRecommendations(true);
+                                            });
                                         } else {
-                                            moveRecommendations();
+                                            initInlineRecommendations(true);
                                         }
 
-                                        document.addEventListener('shopify:section:load', function(event) {
-                                            if (!event || !event.detail) return;
-                                            var id = event.detail.sectionId;
-                                            if (id === '{{ section.id }}' || id === 'product-recommendations') {
-                                                requestAnimationFrame(moveRecommendations);
-                                            }
-                                        });
-
-                                        document.addEventListener('shopify:section:unload', function(event) {
-                                            if (!event || !event.detail) return;
-                                            if (event.detail.sectionId === '{{ section.id }}') {
-                                                var target = document.querySelector(targetSelector);
-                                                if (target) {
-                                                    target.classList.remove('is-loaded');
-                                                }
-                                            }
-                                        });
+                                        document.addEventListener('shopify:section:load', handleSectionLoad);
                                     })();
                                 </script>
                             </div>
