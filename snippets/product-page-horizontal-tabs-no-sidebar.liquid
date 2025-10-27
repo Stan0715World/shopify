@@ -68,7 +68,8 @@
             assign show_tab = false
         endif
     endif
-    assign first_3d_model = product.media | where: "media_type", "model" | first
+    assign sorted_product_media = product.media | sort_natural: 'alt'
+    assign first_3d_model = sorted_product_media | where: "media_type", "model" | first
     assign has_product_combo = false
 
     assign has_sidebar = false
@@ -505,9 +506,9 @@
                                     data-arrows-desk="{{ main_image_arrows_desktop }}"
                                     data-arrows-mobi="{{ main_image_arrows_mobile }}"
                                     data-counter-mobi="{{ main_image_counter_mobile }}"
-                                    data-media-count="{{ product.media.size }}"
+                                    data-media-count="{{ sorted_product_media.size }}"
                                 >
-                                    {%- for media in product.media -%}
+                                    {%- for media in sorted_product_media -%}
                                         {%- case media.media_type -%}
                                             {%- when 'image' -%}
                                                 <div class="productView-image productView-image-{{ media_size }} {% if show_variant_image_group %} filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}{% endif %} fit-{{ media_fit }}" data-index="{{ forloop.index }}">
@@ -692,7 +693,7 @@
                                 </div>
                                 {%- if video_layout == 'popup' -%}
                                     <div class="productView-videoPopup">
-                                        {%- for media in product.media -%}
+                                        {%- for media in sorted_product_media -%}
                                             {%- case media.media_type -%}
                                                 {%- when 'external_video' -%}
                                                     {%- if media.host == 'youtube' -%}
@@ -731,7 +732,7 @@
                             {%- if thumnail_layout != '4' -%}
                                 <div class="productView-thumbnail-wrapper{% unless show_thumbnail_mobile %} is-hidden-mobile{% endunless %}">
                                     <div class="productView-for clearfix" data-max-thumbnail-to-show="{{ max_thumbnail_to_show }}">
-                                        {%- for media in product.media -%}
+                                        {%- for media in sorted_product_media -%}
                                             {%- case media.media_type -%}
                                                 {%- when 'image' -%}
                                                     <div class="productView-thumbnail {% if show_variant_image_group %} filter-{{ media.alt | escape | downcase | replace: ' ', '-' | replace: '(', '-' | replace: ')', '-' }}{% endif %}" data-media-id="{{ section.id }}-{{ media.id }}">
@@ -958,9 +959,19 @@
                                             </div>
                                         {%- endif -%}
                                     {%- when 'price' -%}
-                                        {% assign fontsize_text = block.settings.fontsize_text %}
+                                        {% liquid
+                                            assign fontsize_text = block.settings.fontsize_text
+                                            assign show_reviews_summary = block.settings.show_reviews_summary
+                                            assign reviews_link = block.settings.reviews_link
+                                            assign show_size_selector = block.settings.show_size_selector
+                                            assign size_option_name = block.settings.size_option_name | default: 'Size'
+                                            assign size_label = block.settings.size_label | default: size_option_name
+                                            if reviews_link == blank
+                                                assign reviews_link = '#shopify-product-reviews'
+                                            endif
+                                        %}
                                         <div class="productView-moreItem{% if settings.banner_animation == 'effect_fade_up' %} scroll-trigger animate--slide-in{% endif %}"
-                                            style="--spacing-top: {{ spacing_top | append: 'px' }};
+                                            style="--spacing-top: {{ spacing_top | append: 'px' }};"
                                             --spacing-bottom: {{ spacing_bottom | append: 'px' }};
                                             --fontsize-text: {{ fontsize_text | append: 'px' }}"
                                         >
@@ -992,6 +1003,112 @@
                                                         <span>{{ 'products.product.volume_pricing.note' | t }}</span>
                                                     </div>
                                                 {%- endif -%}
+                                            {% endif %}
+                                            {% if show_reviews_summary %}
+                                                {% assign rating_value = product.metafields.reviews.rating.value %}
+                                                {% assign rating_count = product.metafields.reviews.rating_count | default: product.metafields.reviews.count %}
+                                                {% if rating_value %}
+                                                    {% assign rating_percentage = rating_value | times: 20 %}
+                                                    <div class="productView-rating" data-rating="{{ rating_value }}">
+                                                        <div class="productView-rating__stars" style="--rating-percent: {{ rating_percentage }}%">
+                                                            <span class="visually-hidden">
+                                                                {{ 'accessibility.star_reviews_info' | t: rating_value: rating_value, rating_max: 5 }}
+                                                            </span>
+                                                        </div>
+                                                        {% if rating_count %}
+                                                            {% assign reviews_text = 'products.product.reviews_link' | t: count: rating_count %}
+                                                            {% if reviews_link %}
+                                                                <a class="productView-rating__count" href="{{ reviews_link }}">{{ reviews_text }}</a>
+                                                            {% else %}
+                                                                <span class="productView-rating__count">{{ reviews_text }}</span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if show_size_selector %}
+                                                {% assign normalized_size_option_name = size_option_name | strip %}
+                                                {% assign normalized_size_option_key = normalized_size_option_name | downcase %}
+                                                {% assign size_option = blank %}
+                                                {% for option in product.options_with_values %}
+                                                    {% if option.name | downcase == normalized_size_option_key %}
+                                                        {% assign size_option = option %}
+                                                        {% break %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% if size_option == blank %}
+                                                    {% for option in product.options_with_values %}
+                                                        {% assign option_key = option.name | downcase %}
+                                                        {% if option_key contains 'size' %}
+                                                            {% assign size_option = option %}
+                                                            {% break %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% if size_option %}
+                                                    {% assign size_option_name = size_option.name %}
+                                                    {% if block.settings.size_label == blank %}
+                                                        {% assign size_label = size_option.name %}
+                                                    {% endif %}
+                                                    <div class="productView-size" data-size-option="{{ size_option_name | escape }}">
+                                                        <div class="productView-size__header">
+                                                            <span class="productView-size__label">{{ size_label }}</span>
+                                                        </div>
+                                                        <div class="productView-size__options">
+                                                            {% assign size_position = size_option.position %}
+                                                            {% assign current_variant = product.selected_or_first_available_variant %}
+                                                            {% for value in size_option.values %}
+                                                                {% assign matched_variant = blank %}
+                                                                {% for variant in product.variants %}
+                                                                    {% case size_position %}
+                                                                        {% when 1 %}
+                                                                            {% assign variant_size_value = variant.option1 %}
+                                                                        {% when 2 %}
+                                                                            {% assign variant_size_value = variant.option2 %}
+                                                                        {% when 3 %}
+                                                                            {% assign variant_size_value = variant.option3 %}
+                                                                    {% endcase %}
+                                                                    {% if variant_size_value == value %}
+                                                                        {% assign matches_other_options = true %}
+                                                                        {% assign options_size = product.options.size %}
+                                                                        {% if options_size > 1 %}
+                                                                            {% for option_index in (1..options_size) %}
+                                                                                {% if option_index != size_position %}
+                                                                                    {% assign variant_option_value = variant['option' | append: option_index] %}
+                                                                                    {% assign current_option_value = current_variant['option' | append: option_index] %}
+                                                                                    {% if variant_option_value != current_option_value %}
+                                                                                        {% assign matches_other_options = false %}
+                                                                                        {% break %}
+                                                                                    {% endif %}
+                                                                                {% endif %}
+                                                                            {% endfor %}
+                                                                        {% endif %}
+                                                                        {% if matches_other_options %}
+                                                                            {% assign matched_variant = variant %}
+                                                                            {% break %}
+                                                                        {% endif %}
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                                {% assign is_available = false %}
+                                                                {% if matched_variant %}
+                                                                    {% if matched_variant.available %}
+                                                                        {% assign is_available = true %}
+                                                                    {% endif %}
+                                                                {% endif %}
+                                                                {% assign option_classes = 'productView-size__option' %}
+                                                                {% if matched_variant and current_variant.id == matched_variant.id %}
+                                                                    {% assign option_classes = option_classes | append: ' is-selected' %}
+                                                                {% endif %}
+                                                                {% unless is_available %}
+                                                                    {% assign option_classes = option_classes | append: ' is-disabled' %}
+                                                                {% endunless %}
+                                                                <a class="{{ option_classes }}"{% if matched_variant %} href="{{ matched_variant.url }}"{% endif %}{% unless is_available %} aria-disabled="true" tabindex="-1"{% endunless %}>
+                                                                    <span>{{ value }}</span>
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                     {%- when 'countdown' -%}
