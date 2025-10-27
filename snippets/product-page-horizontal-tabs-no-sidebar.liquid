@@ -993,6 +993,101 @@
                                                         <span>{{ 'products.product.volume_pricing.note' | t }}</span>
                                                     </div>
                                                 {%- endif -%}
+                                                {%- liquid
+                                                    assign rating_raw = block.settings.review_rating | default: ''
+                                                    assign rating_value = rating_raw | replace: ',', '.' | times: 1
+                                                    assign rating_percentage = rating_value | times: 20
+                                                    assign review_count = block.settings.review_count | default: ''
+                                                    assign review_label = block.settings.review_label | default: 'Reviews'
+                                                    assign size_label = block.settings.size_label | default: 'Size'
+                                                    assign size_options_raw = block.settings.size_options | default: ''
+                                                    assign size_options_clean = size_options_raw | replace: '\r\n', ',' | replace: '\n', ',' | replace: '\r', ','
+                                                    assign size_options = size_options_clean | split: ','
+                                                    assign review_aria_label = ''
+                                                    if rating_raw != ''
+                                                        assign review_aria_label = rating_value | round: 1 | append: ' out of 5 stars'
+                                                    elsif review_count != ''
+                                                        assign review_aria_label = review_count | append: ' ' | append: review_label
+                                                    endif
+                                                -%}
+                                                <div class="productView-priceExtras">
+                                                    {%- if rating_raw != '' or review_count != '' -%}
+                                                        <div class="productView-reviews" role="img"{% if review_aria_label != '' %} aria-label="{{ review_aria_label }}"{% endif %}>
+                                                            <div class="productView-stars">
+                                                                <div class="productView-stars__inner">
+                                                                    <div class="productView-stars__base" aria-hidden="true">
+                                                                        {% for i in (1..5) %}
+                                                                            <svg class="productView-star" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                                                <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.787 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.211l8.2-1.193z"/>
+                                                                            </svg>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    {%- if rating_raw != '' -%}
+                                                                        <div class="productView-stars__value" aria-hidden="true" style="width: {{ rating_percentage | at_least: 0 | at_most: 100 }}%">
+                                                                            {% for i in (1..5) %}
+                                                                                <svg class="productView-star" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                                                                    <path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.787 1.402 8.168L12 18.896l-7.336 3.872 1.402-8.168L.132 9.211l8.2-1.193z"/>
+                                                                                </svg>
+                                                                            {% endfor %}
+                                                                        </div>
+                                                                    {%- endif -%}
+                                                                </div>
+                                                            </div>
+                                                            <div class="productView-reviews__meta">
+                                                                {%- if rating_raw != '' -%}
+                                                                    <span class="productView-ratingValue">{{ rating_value | round: 1 }}</span>
+                                                                    <span class="productView-ratingMax">/ 5</span>
+                                                                {%- endif -%}
+                                                                {%- if review_count != '' -%}
+                                                                    <span class="productView-reviewCount">{{ review_count }}</span>
+                                                                    <span class="productView-reviewLabel">{{ review_label }}</span>
+                                                                {%- endif -%}
+                                                            </div>
+                                                        </div>
+                                                    {%- endif -%}
+                                                    {%- assign has_sizes = false -%}
+                                                    {%- for size_option in size_options -%}
+                                                        {%- if size_option | strip != '' -%}
+                                                            {%- assign has_sizes = true -%}
+                                                            {%- break -%}
+                                                        {%- endif -%}
+                                                    {%- endfor -%}
+                                                    {%- if has_sizes -%}
+                                                        <div class="productView-sizeSelector" data-size-selector="{{ block.id }}">
+                                                            {%- if size_label != '' -%}
+                                                                <span class="productView-sizeSelector__label">{{ size_label }}</span>
+                                                            {%- endif -%}
+                                                            <div class="productView-sizeSelector__options">
+                                                                {%- for size_option in size_options -%}
+                                                                    {%- assign size_value = size_option | strip -%}
+                                                                    {%- if size_value != '' -%}
+                                                                        <button type="button" class="productView-sizeSelector__option{% if forloop.first %} is-active{% endif %}" data-size-value="{{ size_value | escape }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+                                                                            {{ size_value }}
+                                                                        </button>
+                                                                    {%- endif -%}
+                                                                {%- endfor -%}
+                                                            </div>
+                                                        </div>
+                                                        <script>
+                                                            (function() {
+                                                                var selector = document.querySelector('[data-size-selector="{{ block.id }}"]');
+                                                                if (!selector || selector.dataset.initialized === 'true') return;
+                                                                selector.dataset.initialized = 'true';
+                                                                selector.addEventListener('click', function(event) {
+                                                                    var button = event.target.closest('button.productView-sizeSelector__option');
+                                                                    if (!button) return;
+                                                                    var buttons = selector.querySelectorAll('button.productView-sizeSelector__option');
+                                                                    buttons.forEach(function(item) {
+                                                                        item.classList.remove('is-active');
+                                                                        item.setAttribute('aria-pressed', 'false');
+                                                                    });
+                                                                    button.classList.add('is-active');
+                                                                    button.setAttribute('aria-pressed', 'true');
+                                                                });
+                                                            })();
+                                                        </script>
+                                                    {%- endif -%}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     {%- when 'countdown' -%}
