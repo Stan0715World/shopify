@@ -1047,6 +1047,7 @@
                                                     {%- endif -%}
                                                     {%- assign has_sizes = false -%}
                                                     {%- for size_option in size_options -%}
+                                                        {%- assign size_value_check = size_option | strip -%}
                                                         {%- if size_option | strip != '' -%}
                                                             {%- assign has_sizes = true -%}
                                                             {%- break -%}
@@ -1813,3 +1814,4 @@
 {% render 'schema',
     product: product
 %}
+
