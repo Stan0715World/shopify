@@ -1,4 +1,5 @@
 
+
 .productView{
     position: relative;
     width: 100%;
@@ -3719,6 +3720,7 @@ quantity-input.disabled {
 }
 
 .productView-ratingMax {
+    color: #6c6c75;
     color: #7b7b86;
     font-weight: 400;
 }
@@ -3763,8 +3765,9 @@ quantity-input.disabled {
     border-radius: 12px;
     border: 1px solid #d7d7e0;
     background-color: #ffffff;
-    color: #1f2024;
-    font-size: 14px;
+    color: #111111;
+    font-family: var(--font-heading-family, var(--font-body-family));
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.02em;
     line-height: 1;
@@ -3800,18 +3803,18 @@ quantity-input.disabled {
     }
 
     .productView-reviews__meta {
-        font-size: 13px;
+        font-size: 14px;
     }
 
     .productView-ratingValue {
-        font-size: 16px;
+        font-size: 18px;
     }
 
     .productView-sizeSelector__option {
         min-width: 40px;
         min-height: 40px;
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 14px;
     }
 }
 
