@@ -20,14 +20,13 @@
                             assign swatch_type = settings.swatch_type
                             assign option_index = forloop.index0
                         -%}
-                        <fieldset class="js product-form__input{% if is_swatch %} product-form__swatch{% endif %} clearfix productView-sizeSelector" data-product-attribute="set-rectangle" data-option-index="{{ forloop.index0 }}">
-                            <legend class="form__label productView-sizeSelector__label">
+                        <fieldset class="js product-form__input{% if is_swatch %} product-form__swatch{% endif %} clearfix" data-product-attribute="set-rectangle" data-option-index="{{ forloop.index0 }}">
+                            <legend class="form__label">
                                 {{ option.name | append: ':' }}
                                 <span data-header-option>
                                     {{ option.selected_value }}
                                 </span>
                             </legend>
-                            <div class="productView-sizeSelector__options{% if is_swatch %} productView-sizeSelector__options--swatch{% endif %}">
                             {%- assign values = '' -%}
                             {%- liquid
                                 assign variants_available_arr = product.variants | map: 'available'
@@ -113,14 +112,13 @@
                                                 </span>
                                             {% endif %}
                                         </label>
-                                    {%- else -%}
-                                        <label class="product-form__label {{ option_stock }} productView-sizeSelector__option" for="option-{{ product.id }}-{{ option.name }}-{{ forloop.index0 }}" data-variant-id="{{ variant.id }}">
+                                    {%- else -%}   
+                                        <label class="product-form__label {{ option_stock }}" for="option-{{ product.id }}-{{ option.name }}-{{ forloop.index0 }}" data-variant-id="{{ variant.id }}">
                                             <span class="text">{{ value }}</span>
                                         </label>
                                     {%- endif -%}
                                 {%- endunless -%}
                             {%- endfor -%}
-                            </div>
                         </fieldset>
                     {%- endfor -%}
                     <script type="application/json">
@@ -130,14 +128,14 @@
             {%- else -%}
                 <variant-selects class="no-js-hidden product-option has-default" data-product="{{ product.id }}" data-section="{{ section.id }}" data-url="{{ product.url }}">
                     {%- for option in product.options_with_values -%}
-                        <div class="product-form__input product-form__input--dropdown productView-sizeSelector productView-sizeSelector--dropdown" data-product-attribute="set-select" data-option-index="{{ forloop.index0 }}">
-                            <label class="form__label productView-sizeSelector__label" for="option-{{ forloop.index0 }}">
+                        <div class="product-form__input product-form__input--dropdown" data-product-attribute="set-select" data-option-index="{{ forloop.index0 }}">
+                            <label class="form__label" for="option-{{ forloop.index0 }}">
                                 {{ option.name | append: ':' }}
                                 <span data-header-option>
                                     {{ option.selected_value }}
                                 </span>
                             </label>
-                            <div class="form__select select productView-sizeSelector__options">
+                            <div class="form__select select">
                                 <select id="option-{{ forloop.index0 }}"
                                     class="select__select"
                                     name="options[{{ option.name | escape }}]"
