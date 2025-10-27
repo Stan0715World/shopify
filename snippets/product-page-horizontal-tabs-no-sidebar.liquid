@@ -1753,6 +1753,55 @@
                                         {% endif %}
                                     </div>
                                 {% endif %}
+                                <div class="productView-recommendations productView-moreItem" id="ProductRecommendationsInline-{{ section.id }}" data-inline-recommendations></div>
+                                <script>
+                                    (function() {
+                                        var targetSelector = '#ProductRecommendationsInline-{{ section.id }}';
+                                        var sourceSelector = '#shopify-section-product-recommendations';
+
+                                        function moveRecommendations() {
+                                            var target = document.querySelector(targetSelector);
+                                            var source = document.querySelector(sourceSelector);
+
+                                            if (!target || !source) {
+                                                return;
+                                            }
+
+                                            if (target.contains(source)) {
+                                                target.classList.add('is-loaded');
+                                                return;
+                                            }
+
+                                            source.classList.add('productView-recommendations__section');
+                                            target.appendChild(source);
+                                            target.classList.add('is-loaded');
+                                        }
+
+                                        if (document.readyState === 'loading') {
+                                            document.addEventListener('DOMContentLoaded', moveRecommendations, { once: true });
+                                        } else {
+                                            moveRecommendations();
+                                        }
+
+                                        document.addEventListener('shopify:section:load', function(event) {
+                                            if (!event || !event.detail) return;
+                                            var id = event.detail.sectionId;
+                                            if (id === '{{ section.id }}' || id === 'product-recommendations') {
+                                                requestAnimationFrame(moveRecommendations);
+                                            }
+                                        });
+
+                                        document.addEventListener('shopify:section:unload', function(event) {
+                                            if (!event || !event.detail) return;
+                                            if (event.detail.sectionId === '{{ section.id }}') {
+                                                var target = document.querySelector(targetSelector);
+                                                if (target) {
+                                                    target.classList.remove('is-loaded');
+                                                }
+                                            }
+                                        });
+                                    })();
+                                </script>
                             </div>
                             {{ remaining_blocks_markup }}
                             {%- if show_tab -%}
