@@ -999,6 +999,36 @@
                                                     assign rating_percentage = rating_value | times: 20
                                                     assign review_count = block.settings.review_count | default: ''
                                                     assign review_label = block.settings.review_label | default: 'Reviews'
+                                                    assign size_label = block.settings.size_label | default: ''
+                                                    assign size_options = ''
+                                                    assign size_option_name = ''
+                                                    assign size_option_position = ''
+                                                    for option in product.options_with_values
+                                                        assign option_name_downcase = option.name | strip | downcase
+                                                        if option_name_downcase contains 'size'
+                                                            assign size_options = option.values
+                                                            assign size_option_name = option.name | strip
+                                                            assign size_option_position = forloop.index0
+                                                            break
+                                                        endif
+                                                    endfor
+                                                    if size_label == '' and size_option_name != ''
+                                                        assign size_label = size_option_name
+                                                    elsif size_label == ''
+                                                        assign size_label = 'Size'
+                                                    endif
+                                                    assign selected_size_value = ''
+                                                    if size_option_position != '' and current_variant
+                                                        case size_option_position
+                                                            when 0
+                                                                assign selected_size_value = current_variant.option1 | default: ''
+                                                            when 1
+                                                                assign selected_size_value = current_variant.option2 | default: ''
+                                                            when 2
+                                                                assign selected_size_value = current_variant.option3 | default: ''
+                                                        endcase
+                                                    endif
+                                                    assign selected_size_value_normalized = selected_size_value | strip | downcase
                                                     assign review_aria_label = ''
                                                     if rating_raw != ''
                                                         assign review_aria_label = rating_value | round: 1 | append: ' out of 5 stars'
@@ -1041,6 +1071,58 @@
                                                             </div>
                                                         </div>
                                                     {%- endif -%}
+                                                    {% comment %} {%- assign has_sizes = false -%}
+                                                    {%- if size_options != blank -%}
+                                                        {%- for size_option in size_options -%}
+                                                            {%- assign size_value_check = size_option | strip -%}
+                                                            {%- if size_value_check != '' -%}
+                                                                {%- assign has_sizes = true -%}
+                                                                {%- break -%}
+                                                            {%- endif -%}
+                                                        {%- endfor -%}
+                                                    {%- endif -%}
+                                                    {%- if has_sizes -%}
+                                                        <div class="productView-sizeSelector" data-size-selector="{{ block.id }}">
+                                                            {%- if size_label != '' -%}
+                                                                <span class="productView-sizeSelector__label">{{ size_label }}</span>
+                                                            {%- endif -%}
+                                                            <div class="productView-sizeSelector__options">
+                                                                {%- for size_option in size_options -%}
+                                                                    {%- assign size_value = size_option | strip -%}
+                                                                    {%- if size_value != '' -%}
+                                                                        {%- assign size_value_normalized = size_value | downcase -%}
+                                                                        {%- assign is_active_size = false -%}
+                                                                        {%- if selected_size_value_normalized != '' and size_value_normalized == selected_size_value_normalized -%}
+                                                                            {%- assign is_active_size = true -%}
+                                                                        {%- elsif selected_size_value_normalized == '' and forloop.first -%}
+                                                                            {%- assign is_active_size = true -%}
+                                                                        {%- endif -%}
+                                                                        <button type="button" class="productView-sizeSelector__option{% if is_active_size %} is-active{% endif %}" data-size-value="{{ size_value | escape }}" aria-pressed="{% if is_active_size %}true{% else %}false{% endif %}">
+                                                                            {{ size_value }}
+                                                                        </button>
+                                                                    {%- endif -%}
+                                                                {%- endfor -%}
+                                                            </div>
+                                                        </div>
+                                                        <script>
+                                                            (function() {
+                                                                var selector = document.querySelector('[data-size-selector="{{ block.id }}"]');
+                                                                if (!selector || selector.dataset.initialized === 'true') return;
+                                                                selector.dataset.initialized = 'true';
+                                                                selector.addEventListener('click', function(event) {
+                                                                    var button = event.target.closest('button.productView-sizeSelector__option');
+                                                                    if (!button) return;
+                                                                    var buttons = selector.querySelectorAll('button.productView-sizeSelector__option');
+                                                                    buttons.forEach(function(item) {
+                                                                        item.classList.remove('is-active');
+                                                                        item.setAttribute('aria-pressed', 'false');
+                                                                    });
+                                                                    button.classList.add('is-active');
+                                                                    button.setAttribute('aria-pressed', 'true');
+                                                                });
+                                                            })();
+                                                        </script>
+                                                    {%- endif -%} {% endcomment %}
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -1640,12 +1722,8 @@
                                 {% assign materials_content = product.metafields.custom.materials | default: product.metafields.c_f.materials %}
                                 {% assign stones_content = product.metafields.custom.stones | default: product.metafields.c_f.stones %}
                                 {% assign crystal_grade_content = product.metafields.custom.crystal_grade | default: product.metafields.c_f.crystal_grade %}
-                                {% assign has_accordion_content = false %}
                                 {% if long_description_content != blank or details_content != blank or materials_content != blank or stones_content != blank or crystal_grade_content != blank %}
-                                    {% assign has_accordion_content = true %}
-                                {% endif %}
-                                <div class="productView-hero__accordions{% unless has_accordion_content %} productView-hero__accordions--only-recommendations{% endunless %}">
-                                    {% if has_accordion_content %}
+                                    <div class="productView-hero__accordions">
                                         {% if long_description_content != blank %}
                                             <details class="productView-accordion" open>
                                                 <summary class="productView-accordion__summary">{{ 'products.product.description' | t | default: 'Product Description' }}</summary>
@@ -1674,142 +1752,55 @@
                                                 </div>
                                             </details>
                                         {% endif %}
-                                    {% endif %}
-                                    <div class="productView-hero__recommendations" data-inline-recommendations-wrapper>
-                                        <div
-                                            class="productView-recommendations productView-moreItem"
-                                            id="ProductRecommendationsInline-{{ section.id }}"
-                                            data-inline-recommendations
-                                            data-inline-recommendations-url="{{ routes.product_recommendations_url }}?section_id=product-recommendations&product_id={{ product.id }}"
-                                        ></div>
                                     </div>
-                                </div>
+                                {% endif %}
+                                <div class="productView-recommendations productView-moreItem" id="ProductRecommendationsInline-{{ section.id }}" data-inline-recommendations></div>
                                 <script>
                                     (function() {
                                         var targetSelector = '#ProductRecommendationsInline-{{ section.id }}';
                                         var sourceSelector = '#shopify-section-product-recommendations';
-                                        var wrapperAttribute = 'data-inline-recommendations-wrapper';
 
-                                        function markLoaded(target) {
-                                            if (!target) return;
-                                            target.classList.add('is-loaded');
-                                            var wrapper = target.closest('[' + wrapperAttribute + ']');
-                                            if (wrapper) {
-                                                wrapper.classList.add('is-loaded');
-                                            }
-                                        }
+                                        function moveRecommendations() {
+                                            var target = document.querySelector(targetSelector);
+                                            var source = document.querySelector(sourceSelector);
 
-                                        function moveSource(target, source) {
                                             if (!target || !source) {
-                                                return false;
+                                                return;
                                             }
 
                                             if (target.contains(source)) {
-                                                markLoaded(target);
-                                                return true;
+                                                target.classList.add('is-loaded');
+                                                return;
                                             }
 
-                                            target.innerHTML = '';
                                             source.classList.add('productView-recommendations__section');
                                             target.appendChild(source);
-                                            markLoaded(target);
-                                            return true;
-                                        }
-
-                                        function fetchAndInject(url, target) {
-                                            if (!url || !target) return;
-
-                                            fetch(url)
-                                                .then(function(response) {
-                                                    if (!response.ok) {
-                                                        throw new Error('Failed to load recommendations');
-                                                    }
-                                                    return response.text();
-                                                })
-                                                .then(function(html) {
-                                                    var parser = new DOMParser();
-                                                    var doc = parser.parseFromString(html, 'text/html');
-                                                    var section = doc.getElementById('shopify-section-product-recommendations');
-
-                                                    if (!section) {
-                                                        return;
-                                                    }
-
-                                                    target.innerHTML = section.innerHTML;
-                                                    markLoaded(target);
-                                                })
-                                                .catch(function() {});
-                                        }
-
-                                        function initInlineRecommendations(force) {
-                                            var target = document.querySelector(targetSelector);
-                                            if (!target) {
-                                                return;
-                                            }
-
-                                            if (!force && target.dataset.inlineRecommendationsInitialized === 'true') {
-                                                return;
-                                            }
-
-                                            target.dataset.inlineRecommendationsInitialized = 'true';
-
-                                            var source = document.querySelector(sourceSelector);
-                                            var dataUrl = target.getAttribute('data-inline-recommendations-url');
-
-                                            if (!dataUrl && source) {
-                                                var block = source.querySelector('[data-recommendations-block]');
-                                                if (block) {
-                                                    dataUrl = block.getAttribute('data-url');
-                                                }
-                                            }
-
-                                            var moved = moveSource(target, source);
-
-                                            if (!moved && source) {
-                                                var observer = new MutationObserver(function() {
-                                                    if (moveSource(target, source)) {
-                                                        observer.disconnect();
-                                                    }
-                                                });
-
-                                                observer.observe(source, {
-                                                    childList: true,
-                                                    subtree: true
-                                                });
-                                            }
-
-                                            window.setTimeout(function() {
-                                                if (target.querySelector('.halo-product-block, [data-recommendations-block]')) {
-                                                    markLoaded(target);
-                                                    return;
-                                                }
-
-                                                fetchAndInject(dataUrl, target);
-                                            }, 700);
-                                        }
-
-                                        function handleSectionLoad(event) {
-                                            if (!event || !event.detail) return;
-
-                                            var id = event.detail.sectionId;
-                                            if (id === '{{ section.id }}' || id === 'product-recommendations') {
-                                                var target = document.querySelector(targetSelector);
-                                                if (target) {
-                                                    target.dataset.inlineRecommendationsInitialized = 'false';
-                                                }
-                                                initInlineRecommendations(true);
-                                            }
+                                            target.classList.add('is-loaded');
                                         }
 
                                         if (document.readyState === 'loading') {
-                                            document.addEventListener('DOMContentLoaded', function() {
-                                                initInlineRecommendations(true);
-                                            });
+                                            document.addEventListener('DOMContentLoaded', moveRecommendations, { once: true });
                                         } else {
-                                            initInlineRecommendations(true);
+                                            moveRecommendations();
                                         }
 
-                                        document.addEventListener('shopify:section:load', handleSectionLoad);
+                                        document.addEventListener('shopify:section:load', function(event) {
+                                            if (!event || !event.detail) return;
+                                            var id = event.detail.sectionId;
+                                            if (id === '{{ section.id }}' || id === 'product-recommendations') {
+                                                requestAnimationFrame(moveRecommendations);
+                                            }
+                                        });
+
+                                        document.addEventListener('shopify:section:unload', function(event) {
+                                            if (!event || !event.detail) return;
+                                            if (event.detail.sectionId === '{{ section.id }}') {
+                                                var target = document.querySelector(targetSelector);
+                                                if (target) {
+                                                    target.classList.remove('is-loaded');
+                                                }
+                                            }
+                                        });
                                     })();
                                 </script>
                             </div>
