@@ -35,6 +35,14 @@
     assign fontsize_co_button = section.settings.fontsize_co_button | append: 'px'
     assign color_co_button = section.settings.color_co_button
     assign color_co_button_hover = section.settings.color_co_button_hover
+    assign button_color_value = color_co_button
+    if button_color_value == blank or button_color_value == 'rgba(0,0,0,0)'
+      assign button_color_value = '#ffffff'
+    endif
+    assign button_color_hover_value = color_co_button_hover
+    if button_color_hover_value == blank or button_color_hover_value == 'rgba(0,0,0,0)'
+      assign button_color_hover_value = button_color_value
+    endif
 -%} 
 <div class="collections-list section-block-{{section.id}}{% if settings.banner_animation == 'effect_fade_up' %} scroll-trigger animate--slide-in{% endif %}{% if section.settings.enable_heading_sticky %} enable_heading_sticky{% endif %}" id="slidable-spotlight-{{section.id}}">
     <div class="{% if section.settings.container == 'fullwidth' %}container-full{% elsif section.settings.container == '1170' %}container-1170{% elsif section.settings.container == '1770' %}container-1770{% else %}container{% endif %}">
@@ -62,16 +70,72 @@
               >
                 {%- assign placeholder_image_index = forloop.index0 | modulo: 4 | plus: 1 -%}
                 {%- assign placeholder_image = 'collection-apparel-' | append: placeholder_image_index -%}
-                {% render 'card-collection',
-                  card_collection: block.settings.collection,
-                  image_ratio: section.settings.image_ratio,
-                  portrait_aspect_ratio: section.settings.portrait_aspect_ratio,
-                  button_co_title: section.settings.button_co_title,
-                  collection_align: section.settings.collection_align,
-                  show_co_description: section.settings.show_co_description,
-                  limit_co_content_des: section.settings.limit_co_content_des,
-                  placeholder_image: placeholder_image
+                {% assign card_collection = block.settings.collection %}
+                {% liquid
+                  assign collection_title = 'Collection'
+                  assign collection_description = ''
+                  assign collection_button_text = ''
+                  if card_collection
+                    assign collection_title = card_collection.title | default: 'Collection'
+                    assign collection_description = card_collection.description
+                  endif
+                  capture collection_button_text
+                    if button_co_title != blank
+                      echo button_co_title | strip
+                      echo ' '
+                    endif
+                    echo collection_title
+                  endcapture
+                  assign collection_button_text = collection_button_text | strip
+                  assign media_ratio = section.settings.image_ratio
+                  assign portrait_ratio = section.settings.portrait_aspect_ratio | divided_by: 100.0
+                  assign fixed_ratio = ''
+                  if media_ratio == 'square'
+                    assign fixed_ratio = 1
+                  elsif media_ratio == 'portrait'
+                    assign fixed_ratio = portrait_ratio
+                  endif
                 %}
+                <div class="collection-card-wrapper">
+                  <div class="collection-card">
+                    <div class="collection-card__media-wrapper{% if fixed_ratio != '' %} collection-card__media-wrapper--fixed{% endif %}"{% if fixed_ratio != '' %} style="--collection-card-media-ratio: {{ fixed_ratio }}"{% endif %}>
+                      {%- if card_collection -%}
+                        <a class="collection-card__media-link" href="{{ card_collection.url }}" aria-label="{{ collection_title | escape }}">
+                          {%- if card_collection.featured_image -%}
+                            <img
+                              src="{{ card_collection.featured_image | image_url: width: 900 }}"
+                              alt="{{ card_collection.featured_image.alt | default: collection_title | escape }}"
+                              loading="lazy"
+                              class="collection-card__image"
+                            >
+                          {%- else -%}
+                            {{ placeholder_image | placeholder_svg_tag: 'collection-card__placeholder placeholder-svg' }}
+                          {%- endif -%}
+                        </a>
+                      {%- else -%}
+                        <div class="collection-card__media-link" role="img" aria-label="{{ collection_title | escape }}">
+                          {{ placeholder_image | placeholder_svg_tag: 'collection-card__placeholder placeholder-svg' }}
+                        </div>
+                      {%- endif -%}
+                    </div>
+                    <div class="collection-card__footer text-{{ collection_align }}">
+                      {%- if section.settings.show_co_description and card_collection and collection_description != blank -%}
+                        <p class="collection-card__description">
+                          {{ collection_description | strip_html | truncatewords: section.settings.limit_co_content_des }}
+                        </p>
+                      {%- endif -%}
+                      {%- if card_collection -%}
+                        <a class="collection-card__cta" href="{{ card_collection.url }}">
+                          {{ collection_button_text | escape }}
+                        </a>
+                      {%- else -%}
+                        <span class="collection-card__cta collection-card__cta--disabled" aria-disabled="true">
+                          {{ collection_button_text | escape }}
+                        </span>
+                      {%- endif -%}
+                    </div>
+                  </div>
+                </div>
               </li>
             {%- endfor -%}
           </ul>
@@ -82,34 +146,19 @@
     {%- if section_bg_image != blank -%}
         .section-block-{{section.id}}{background: url({{ section_bg_image | img_url: '1920x' }});background-repeat: repeat-x;background-size: cover}
     {%- else -%}
-        .section-block-{{section.id}} {background: {% if section_bg_gradient != blank %}{{ section_bg_gradient }}{% else %}{{ section_bg_color }}{% endif %}}   
+        .section-block-{{section.id}} {background: {% if section_bg_gradient != blank %}{{ section_bg_gradient }}{% else %}{{ section_bg_color }}{% endif %}}
     {%- endif -%}
 
-    .section-block-{{section.id}} .collection-list .card__heading {
-        font-size: {{co_title_font_size}};
-        font-weight: {{co_title_font_weight}};
-        text-transform: {{co_title_text_transform}};
-        margin-bottom: {{mg_bottom_co_title}};
-        color: {{co_title_color}};
+    .section-block-{{section.id}} {
+        --collection-button-font-size: {{ fontsize_co_button }};
+        --collection-button-color: {{ button_color_value }};
+        --collection-button-color-hover: {{ button_color_hover_value }};
+        --collection-button-background: #111111;
+        --collection-description-color: {{ co_des_color }};
+        --collection-description-font-size: {{ co_des_font_size }};
+        --collection-description-font-weight: {{ co_des_font_weight }};
     }
 
-    .section-block-{{section.id}} .collection-list .card__description {
-        color: {{co_des_color}};
-        font-size: {{co_des_font_size}};
-        font-weight: {{co_des_font_weight}};
-        margin: 0;
-    }
-
-    .section-block-{{section.id}} .collection-list .full-unstyled-link {
-        color: {{color_co_button}};
-        font-size: {{fontsize_co_button}}
-    }
-
-    {% if section.settings.collection_list_style == 'style_1' %}
-        .section-block-{{section.id}} .collection-list .card__description {
-            margin-bottom: 15px;
-        }
-    {% endif %}
     @media (max-width: 1024px){
       .section-block-{{section.id}} .container-full {
         padding-left: 15px;
@@ -121,14 +170,9 @@
         }
       {%- endif -%}
     }
-    @media (max-width: 768px) {
-      .section-block-{{section.id}} .collection-list .card__heading {
-        font-size: {{co_title_font_size_mb}};
-      }
-    }
     @media (max-width: 767px) {.section-block-{{section.id}} {padding-top: {{ mg_top_mobile | append: 'px' }};padding-bottom: {{ mg_bottom_mobile | append: 'px' }}}
     .section-block-{{section.id}} .container-full {padding-left: 10px;padding-right: 10px}}
-    
+
     @media (min-width: 1200px) {.section-block-{{section.id}} {padding-top: {{ mg_top_desktop | append: 'px' }};padding-bottom: {{ mg_bottom_desktop | append: 'px' }}}}
     {%- if section.settings.container == 'fullwidth' -%}
         @media (min-width: 1025px) {
@@ -139,27 +183,6 @@
             {%- endif -%}
         }
     {%- endif -%}
-    @media (min-width: 1025px) {
-      .section-block-{{section.id}} .collection-list .collection-card-wrapper .card__heading:hover  {
-        color: {{co_title_color_hover}};
-      }
-      .section-block-{{section.id}} .collection-list .collection-card-wrapper .card__description:hover  {
-        color: {{co_des_color_hover}};
-      }
-      .section-block-{{section.id}} .collection-list-slider.style_2 .collection-card-wrapper:hover .card__heading {
-        color: {{co_title_color_hover}};
-      }
-      .section-block-{{section.id}} .collection-list-slider.style_2 .collection-card-wrapper:hover .card__description {
-        color: {{co_des_color_hover}};
-      }
-      .section-block-{{section.id}} .collection-list .full-unstyled-link:hover {
-        color: {{color_co_button_hover}};
-      }
-      {%- if section.settings.collection_list_style == 'style_2' -%}
-        .section-block-{{section.id}} .halo-block-header {margin-bottom: 40px}
-        .section-block-{{section.id}} .halo-block-header .collection-view-all {text-underline-offset: .2em;}
-      {%- endif -%}
-    }
     @media (min-width: 768px) and (max-width: 1199px) {.section-block-{{section.id}} {padding-top: {{ mg_top_tablet | append: 'px' }};padding-bottom: {{ mg_bottom_tablet | append: 'px' }}}}
 </style>
 {% schema %}
